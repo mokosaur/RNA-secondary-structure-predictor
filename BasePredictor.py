@@ -25,10 +25,10 @@ class BasePredictor:
                         '}', '.').replace('-', '.') if purify else splitted[2]
                     sequence = splitted[1]
                     if repair and dot.count('(') + 1 == dot.count(')'):  # only for single-stranded?
-                        pos = dot.rfind(')')
+                        dot = '(' + dot
+                        pos = rna.match_parentheses(dot, 0) - 1
                         a = sequence[pos]
                         sequence = rna.complementary(a).lower() + sequence
-                        dot = '(' + dot
                     if repair and dot.count('(') != dot.count(')'):
                         continue
                     sequences.append(sequence.upper() if capitalize else sequence)
@@ -38,12 +38,16 @@ class BasePredictor:
         self.X = np.mat(result)
         return self.X
 
+    def train(self, X=None):
+        if X is None and self.X.shape[0] == 0:
+            raise Exception('There is no data to train.')
+        else:
+            if X is not None:
+                self.X = X
+            self.train_X()
 
-p = BasePredictor()
-X = p.load_data("secondary.fa", capitalize=True, purify=True, repair=True)
-# print(X)
-# print(X.shape)
+    def train_X(self):
+        raise Exception("You cannot train a base predictor.")
 
-mol = X[0]
-m = rna.Molecule(X[1,0], X[1,1])
-m.show()
+    def predict(self, seq):
+        raise Exception("You cannot predict with a base predictor.")
