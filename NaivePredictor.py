@@ -19,12 +19,13 @@ import lasagne
 
 
 class NaivePredictor(BasePredictor):
-    def __init__(self, sequence_length, substrings=False, max_examples=500, library='mxnet'):
+    def __init__(self, sequence_length, substrings=False, max_examples=500, library='mxnet', data_model='linear'):
         super().__init__()
         self.sequence_length = sequence_length
         self.max_examples = max_examples
         self.substrings = substrings
         self.library = library
+        self.data_model = data_model
 
     def preprocess(self):
         X = self.X
@@ -36,9 +37,9 @@ class NaivePredictor(BasePredictor):
                 for j in m.get_substrings(self.sequence_length):
                     seq = j.seq
                     dot = j.dot
-                    if dot[::-1] in y:
+                    if rna.dot_reverse(dot) in y:
                         seq = seq[::-1]
-                        dot = dot[::-1]
+                        dot = rna.dot_reverse(dot)
                     list.append(rna.encode_rna(seq))
                     y.append(dot)
                     # list.append(rna.encode_rna(j.seq))
@@ -47,10 +48,13 @@ class NaivePredictor(BasePredictor):
                 if len(i[0, 0]) == self.sequence_length:
                     seq = i[0, 0]
                     dot = i[0, 1]
-                    if dot[::-1] in y:
+                    if rna.dot_reverse(dot) in y:
                         seq = seq[::-1]
-                        dot = dot[::-1]
-                    list.append(rna.encode_rna(seq))
+                        dot = rna.dot_reverse(dot)
+                    if self.data_model == 'linear':
+                        list.append(rna.encode_rna(seq))
+                    elif self.data_model == 'matrix':
+                        list.append(rna.complementarity_matrix(rna.Molecule(seq)))
                     y.append(dot)
         X = np.array(list)
         y = y[:self.max_examples]
@@ -119,10 +123,17 @@ class NaivePredictor(BasePredictor):
         #     # Run model
         #     optimizer.run(50)
         if self.library == 'lasagne':
-            input_var = T.matrix('inputs')
+            if self.data_model == 'linear':
+                input_var = T.matrix('inputs')
+            elif self.data_model == 'matrix':
+                input_var = T.tensor3('inputs')
             target_var = T.ivector('targets')
 
-            l_in = lasagne.layers.InputLayer(shape=(None, self.sequence_length),
+            shape = (None, self.sequence_length)
+            if self.data_model == 'matrix':
+                shape = (None, self.sequence_length, self.sequence_length)
+
+            l_in = lasagne.layers.InputLayer(shape=shape,
                                              input_var=input_var)
             l_in_drop = lasagne.layers.DropoutLayer(l_in, p=0.2)
             l_hid1 = lasagne.layers.DenseLayer(
@@ -149,7 +160,7 @@ class NaivePredictor(BasePredictor):
             self.model = theano.function([input_var], prediction, allow_input_downcast=True)
 
             # Training
-            it = 3500
+            it = 5000
             for i in range(it):
                 l = f_learn(X, y)
 
@@ -161,16 +172,24 @@ class NaivePredictor(BasePredictor):
             prob = self.model.predict(example)
 
         if self.library == 'lasagne':
-            prob = self.model(np.array([rna.encode_rna(seq), rna.encode_rna(seq[::-1])]))
+            if self.data_model == 'linear':
+                prob = self.model(np.array([rna.encode_rna(seq), rna.encode_rna(seq[::-1])]))
+            elif self.data_model == 'matrix':
+                prob = self.model(np.array([rna.complementarity_matrix(rna.Molecule(seq)),
+                                            rna.complementarity_matrix(rna.Molecule(seq[::-1]))]))
         print(prob[0].max(), prob[1].max())
+        backwards = False
         if prob[0].max() > prob[1].max():
             max = prob[0].argmax()
         else:
             max = prob[1].argmax()
+            backwards = True
         for i, j in self.a.items():
             if j == max:
                 dot = i
                 break
+        if backwards:
+            dot = rna.dot_reverse(dot)
         m = rna.Molecule(seq, dot)
         m.show()
         return m

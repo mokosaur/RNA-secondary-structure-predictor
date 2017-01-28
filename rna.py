@@ -1,12 +1,14 @@
 import webbrowser
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 
 class Molecule:
     def __init__(self, seq, dot=None):
         self.__seq = seq
         self.__dot = None
+        self.matrix = None
         if dot:
             self.__dot = dot
 
@@ -14,7 +16,19 @@ class Molecule:
         return "\n{}\n{}\n".format(self.seq, self.dot)
 
     def __str__(self):
-        return "{}".format(self.seq)
+        return "{}\n{}".format(self.seq, self.dot)
+
+    def __eq__(self, other):
+        if isinstance(other, Molecule):
+            return self.seq == other.seq and self.dot == other.dot
+        else:
+            return False
+
+    def __ne__(self, other):
+        return (not self.__eq__(other))
+
+    def __hash__(self):
+        return hash(self.__repr__())
 
     def show(self):
         if self.__dot:
@@ -59,9 +73,34 @@ class Molecule:
                         break
                 if ctr == 0:
                     valid.append(Molecule(substring, subdot))
-                # if subdot.count('(') == subdot.count(')'):
-                #     valid.append(Molecule(substring, subdot))
             return valid
+
+    def repair(self):
+        self.dot = self.dot.replace('()', '..').replace('(.)', '...').replace('(..)', '....').replace('(...)', '.....')
+        self.matrix = pair_matrix(self)
+        length = len(self.seq)
+        for x in range(length):
+            for y in range(x, length):
+                if self.matrix[x, y] == 1:
+                    if not is_pair_allowed(self.seq[x], self.seq[y]):
+                        self.dot = self.dot[:x] + '.' + self.dot[x + 1:y] + '.' + self.dot[y + 1:]
+        return self
+
+    def evaluate(self):
+        self.matrix = pair_matrix(self)
+        score = 0
+        for x in range(len(self.seq)):
+            for y in range(x, len(self.seq)):
+                if self.matrix[x, y] == 1:
+                    if abs(x - y) < 5:
+                        score -= 7
+                    if self.seq[x] == complementary(self.seq[y]):
+                        score += 2
+                    elif self.seq[x] == 'U' and self.seq[y] == 'G' or self.seq[x] == 'G' and self.seq[y] == 'U':
+                        score += 1
+                    else:
+                        score -= 5
+        return score
 
 
 def complementary(a):
@@ -75,6 +114,14 @@ def complementary(a):
     if a == 'G':
         return 'C'
     raise Exception('The given letter is not a valid RNA base.')
+
+
+def is_pair_allowed(a, b):
+    if a == complementary(b):
+        return True
+    if a == 'G' and b == 'U' or a == 'U' and b == 'G':
+        return True
+    return False
 
 
 def encode_rna(x):
@@ -92,6 +139,10 @@ def match_parentheses(dot, position):
             else:
                 stack -= 1
     return -1
+
+
+def dot_reverse(dot):
+    return dot[::-1].replace('(', '/').replace(')', '(').replace('/', ')')
 
 
 def pair_matrix(m, show=False):
