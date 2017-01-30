@@ -75,7 +75,7 @@ class MFTPredictor(BasePredictor):
             sum += self.node_weight(x, y)
             self.neurons[k] = (math.tanh(beta * sum) + 1) / 2
 
-    def train(self, X=None, eta=0.001, limit=10, num_iter=5):
+    def train(self, X=None, eta=0.001, limit=10, num_iter=5, log=False):
         """Train predictor on example data.
 
         Args:
@@ -114,7 +114,8 @@ class MFTPredictor(BasePredictor):
                             self.gamma -= dif
                         else:
                             self.mi -= dif
-                print("Sequence {} trained...".format(s))
+                if log:
+                    print("Sequence {} trained...".format(s))
         print(self.alpha, self.beta, self.gamma, self.mi)
 
     def get_upper_triangular_coordinates(self, k):

@@ -24,19 +24,16 @@ class GeneticPredictor:
         Returns:
             population: Last known population.
         """
+
         if not molecule.dot:
             molecule.dot = '.' * len(molecule.seq)
-        population = [molecule] + [self.mutate(molecule) for i in range(self.population_size - 1)]
+        population = [molecule] + [self.mutate(molecule) for _ in range(self.population_size - 1)]
         for epoch in range(self.num_epoch):
             new_population = set(population)
             for i in range(self.population_size * 20):
-                mutation = self.mutate(population[random.randrange(self.population_size)])
+                mutation = self.mutate(population[random.randrange(len(population))])
                 new_population.add(mutation.repair())
-            population = sorted(new_population, key=lambda x: x.evaluate())[-self.population_size:]
-
-        for o in population:
-            o.show()
-
+            population = sorted(list(new_population), key=lambda x: x.evaluate())[-self.population_size:]
         return population
 
     def mutate(self, molecule):
@@ -58,4 +55,5 @@ class GeneticPredictor:
             dot = dot[:x] + '(' + dot[x + 1: y] + ')' + dot[y + 1:]
         if m[x, y] == 1:
             dot = dot[:x] + '.' + dot[x + 1: y] + '.' + dot[y + 1:]
+            dot = self.mutate(rna.Molecule(seq, dot)).dot
         return rna.Molecule(seq, dot)

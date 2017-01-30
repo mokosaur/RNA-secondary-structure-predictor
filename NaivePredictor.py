@@ -172,7 +172,6 @@ class NaivePredictor(BasePredictor):
             elif self.data_model == 'matrix':
                 prob = self.model(np.array([rna.complementarity_matrix(rna.Molecule(seq)),
                                             rna.complementarity_matrix(rna.Molecule(seq[::-1]))]))
-        print(prob[0].max(), prob[1].max())
         backwards = False
         if prob[0].max() > prob[1].max():
             max = prob[0].argmax()
@@ -186,5 +185,4 @@ class NaivePredictor(BasePredictor):
         if backwards:
             dot = rna.dot_reverse(dot)
         m = rna.Molecule(seq, dot)
-        m.show()
         return m
