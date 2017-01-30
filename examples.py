@@ -2,7 +2,7 @@
 # from NaivePredictor import NaivePredictor
 import rna
 # from GeneticPredictor import GeneticPredictor
-from NetPredictor import NetPredictor
+from MFTPredictor import MFTPredictor
 
 # p = BasePredictor()
 # X = p.load_data("secondary.fa", capitalize=True, purify=True, repair=True)
@@ -35,9 +35,15 @@ from NetPredictor import NetPredictor
 # p.predict(rna.Molecule("GGCCCCAUCGUCUAGCGGUUAGGACGCGGCCCUCUCAAGGCCGAAACGGGGGUUCGAUUCCCCCUGGGGUCACCA"))
 
 
-p = NetPredictor(num_epoch=10)
-print(p.predict(rna.Molecule("GGAAAACC")))
-# print(p.predict(rna.Molecule("GGCCUGAGGAGACUCAGAAGCC")))
+p = MFTPredictor(num_epoch=20)
+p.load_data("secondary.fa", capitalize=True, purify=True, repair=True)
+# print(p.predict(rna.Molecule("GGAAAACC")))
+# p.train([rna.Molecule("GGCCUGAGGAGACUCAGAAGCC", "((((((((....)))))..)))")])
+p.train()
+result = p.predict(rna.Molecule("GGCCUGAGGAGACUCAGAAGCC"))
+print(result)
+result.show()
+# result = p.predict(rna.Molecule("GGCCUGAGGAGACUCAGAAGCC"))
 # print(p.predict(rna.Molecule("GGCCCCAUCGUCUAGCGGUUAGGACGCGGCCCUCUCAAGGCCGAAACGGGGGUUCGAUUCCCCCUGGGGUCACCA")))
 
 
