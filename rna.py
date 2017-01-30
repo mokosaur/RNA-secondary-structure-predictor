@@ -14,6 +14,11 @@ class Molecule:
             seq: String that contains RNA sequence.
             dot: Bracket notation of the secondary structure.
         """
+        if not set(seq) <= set('AGCU'):
+            raise Exception("Wrong RNA sequence - only A,G,C,U nucleobases are allowed.")
+        if dot:
+            if dot.count('(') != dot.count(')'):
+                raise Exception("Wrong bracket notation.")
         self.__seq = seq
         self.__dot = None
         self.matrix = None
@@ -211,7 +216,7 @@ def dot_reverse(dot):
         dot: Bracket notation.
 
     Return:
-        reversed: Reversed bracket notation.
+        reversed (string): Reversed bracket notation.
     """
     return dot[::-1].replace('(', '/').replace(')', '(').replace('/', ')')
 
