@@ -1,14 +1,6 @@
 from BasePredictor import BasePredictor
 import mxnet as mx
 
-# import hebel
-# from hebel.models import NeuralNet
-# from hebel.optimizers import SGD
-# from hebel.parameter_updaters import MomentumUpdate
-# from hebel.data_providers import BatchDataProvider
-# from hebel.monitors import ProgressMonitor
-# from hebel.schedulers import exponential_scheduler, linear_scheduler_up
-
 import numpy as np
 import rna
 
@@ -19,7 +11,18 @@ import lasagne
 
 
 class NaivePredictor(BasePredictor):
+    """Naive approach to RNA secondary structure prediction based on MLP multi-class classification."""
+
     def __init__(self, sequence_length, substrings=False, max_examples=500, library='mxnet', data_model='linear'):
+        """Make Naive Predictor.
+
+        Args:
+            sequence_length: Length of the sequence whose structure is predicted.
+            substrings (bool): Accept sequence substrings for training phase.
+            max_examples: Limit of examples predictor trains on.
+            library: Underlying library ('mxnet' or 'lasagne') to make network topology and train on it.
+            data_model: Model ('linear' or 'matrix') of data that is the input to the network.
+        """
         super().__init__()
         self.sequence_length = sequence_length
         self.max_examples = max_examples
@@ -28,6 +31,11 @@ class NaivePredictor(BasePredictor):
         self.data_model = data_model
 
     def preprocess(self):
+        """Preprocess loaded data.
+
+        Returns:
+            X, y: NDArray of sequences and NDArray of labels.
+        """
         X = self.X
         y = []
         list = []
@@ -71,6 +79,7 @@ class NaivePredictor(BasePredictor):
         return X[:self.max_examples, :], y[:self.max_examples]
 
     def train_X(self):
+        """Train the predictor with already saved data."""
         X, y = self.preprocess()
 
         if self.library == 'mxnet':
@@ -100,28 +109,6 @@ class NaivePredictor(BasePredictor):
                                               momentum=0.9)
 
             self.model.fit(X=examples)
-        # if self.library == 'hebel':
-        #     # Create model object
-        #     train_data = BatchDataProvider(X, y)
-        #
-        #     model = NeuralNet(n_in=train_data.D, n_out=self.num_labels,
-        #                       layers=[2000, 2000, 2000, 500],
-        #                       activation_function='relu',
-        #                       dropout=True, input_dropout=0.2)
-        #
-        #     # Create optimizer object
-        #     progress_monitor = ProgressMonitor(
-        #         experiment_name='rna',
-        #         save_model_path='examples/rna',
-        #         save_interval=5,
-        #         output_to_log=True)
-        #
-        #     optimizer = SGD(model, MomentumUpdate, train_data, train_data, progress_monitor,
-        #                     learning_rate_schedule=exponential_scheduler(5., .995),
-        #                     momentum_schedule=linear_scheduler_up(.1, .9, 100))
-        #
-        #     # Run model
-        #     optimizer.run(50)
         if self.library == 'lasagne':
             if self.data_model == 'linear':
                 input_var = T.matrix('inputs')
@@ -165,6 +152,14 @@ class NaivePredictor(BasePredictor):
                 l = f_learn(X, y)
 
     def predict(self, seq):
+        """Predict the secondary structure of RNA sequence.
+
+        Args:
+            seq: RNA sequence.
+
+        Returns:
+            m: Molecule object with predicted bracket notation.
+        """
         prob = [[], []]
         dot = ''
         if self.library == 'mxnet':

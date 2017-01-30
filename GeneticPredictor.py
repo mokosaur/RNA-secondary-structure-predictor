@@ -3,11 +3,27 @@ import rna
 
 
 class GeneticPredictor:
+    """Predictor that uses a simple genetic algorithm."""
+
     def __init__(self, population_size=5, num_epoch=50):
+        """Make predictor.
+
+        Args:
+            population_size: Number of units remaining in each population.
+            num_epoch: Number of epochs during the prediction.
+        """
         self.population_size = population_size
         self.num_epoch = num_epoch
 
     def predict(self, molecule):
+        """Predict the secondary structure.
+
+        Args:
+            molecule: Molecule object for prediction.
+
+        Returns:
+            population: Last known population.
+        """
         if not molecule.dot:
             molecule.dot = '.' * len(molecule.seq)
         population = [molecule] + [self.mutate(molecule) for i in range(self.population_size - 1)]
@@ -21,10 +37,17 @@ class GeneticPredictor:
         for o in population:
             o.show()
 
-    def crossover(self, a, b):
-        pass
+        return population
 
     def mutate(self, molecule):
+        """Mutate molecule by inserting or deleting basepairs.
+
+        Args:
+            molecule: Molecule that should be mutated.
+
+        Returns:
+            mutated: Mutated Molecule.
+        """
         m = rna.pair_matrix(molecule)
         seq = molecule.seq
         dot = molecule.dot

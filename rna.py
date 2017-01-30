@@ -5,7 +5,15 @@ import math
 
 
 class Molecule:
+    """RNA molecule class."""
+
     def __init__(self, seq, dot=None):
+        """Make RNA molecule.
+
+        Args:
+            seq: String that contains RNA sequence.
+            dot: Bracket notation of the secondary structure.
+        """
         self.__seq = seq
         self.__dot = None
         self.matrix = None
@@ -31,6 +39,7 @@ class Molecule:
         return hash(self.__repr__())
 
     def show(self):
+        """Show molecule's secondary structure in the browser."""
         if self.__dot:
             webbrowser.open(
                 "http://nibiru.tbi.univie.ac.at/forna/forna.html?id=url/name&sequence={}&structure={}".format(
@@ -41,6 +50,7 @@ class Molecule:
 
     @property
     def seq(self):
+        """String containing RNA sequence."""
         return self.__seq
 
     @seq.setter
@@ -49,6 +59,7 @@ class Molecule:
 
     @property
     def dot(self):
+        """Bracket notation of the secondary structure."""
         return self.__dot
 
     @dot.setter
@@ -56,6 +67,14 @@ class Molecule:
         self.__dot = dot
 
     def get_substrings(self, length):
+        """Get all substrings having correct structure of given length.
+
+        Args:
+            length: Length of returned substrings.
+
+        Returns:
+            valid: List of valid substrings.
+        """
         if self.dot is None:
             raise Exception("There is no structure given for this molecule.")
         else:
@@ -76,6 +95,11 @@ class Molecule:
             return valid
 
     def repair(self):
+        """Repair the secondary structure by removing invalid pairs and sharp loops.
+
+        Returns:
+            self: Molecule object (repaired in place).
+        """
         self.dot = self.dot.replace('()', '..').replace('(.)', '...').replace('(..)', '....').replace('(...)', '.....')
         self.matrix = pair_matrix(self)
         length = len(self.seq)
@@ -87,6 +111,11 @@ class Molecule:
         return self
 
     def evaluate(self):
+        """Evaluate the energy of Molecule.
+
+        Returns:
+            score: Score based on pairings and hairpin loops.
+        """
         self.matrix = pair_matrix(self)
         score = 0
         for x in range(len(self.seq)):
@@ -104,6 +133,14 @@ class Molecule:
 
 
 def complementary(a):
+    """Get complementary nucleobase.
+
+    Args:
+        a: One of four nucleobases ('A', 'G', 'C', 'U').
+
+    Returns:
+        b: Complementary base.
+    """
     a = a.upper()
     if a == 'A':
         return 'U'
@@ -117,6 +154,15 @@ def complementary(a):
 
 
 def is_pair_allowed(a, b):
+    """Check if the nucleobase pair is allowed.
+
+    Args:
+        a: First base.
+        b: Second base.
+
+    Returns:
+        allowed (bool): Information whether the pair is allowed or not.
+    """
     if a == complementary(b):
         return True
     if a == 'G' and b == 'U' or a == 'U' and b == 'G':
@@ -125,10 +171,27 @@ def is_pair_allowed(a, b):
 
 
 def encode_rna(x):
+    """Encode RNA sequence as a list of integers.
+
+    Args:
+        x: RNA sequence.
+
+    Returns:
+        e: List containing encoded sequence.
+    """
     return [0 if y == 'A' else 1 if y == 'U' else 2 if y == 'G' else 3 for y in x]
 
 
 def match_parentheses(dot, position):
+    """Find matching parenthesis in bracket notation.
+
+    Args:
+        dot: Bracket notation.
+        position: Position where there is an opening parenthesis to match.
+
+    Returns:
+        i: Index of matching parenthesis (-1 if nothing was found).
+    """
     stack = 0
     for i in range(position + 1, len(dot)):
         if dot[i] == '(':
@@ -142,10 +205,27 @@ def match_parentheses(dot, position):
 
 
 def dot_reverse(dot):
+    """Reverse bracket notation.
+
+    Args:
+        dot: Bracket notation.
+
+    Return:
+        reversed: Reversed bracket notation.
+    """
     return dot[::-1].replace('(', '/').replace(')', '(').replace('/', ')')
 
 
 def pair_matrix(m, show=False):
+    """Produce pair matrix for the given molecule.
+
+    Args:
+        m: Molecule object.
+        show (bool): Make a matrix plot of the result.
+
+    Returns:
+        p: Pair matrix.
+    """
     l = len(m.seq)
     p = np.zeros((l, l))
     dot = m.dot
@@ -168,6 +248,17 @@ def pair_matrix(m, show=False):
 
 
 def complementarity_matrix(m, show=False):
+    """Produce complementarity matrix for the given molecule.
+
+    Complementary bases (according to Watson-Crick) are assigned 2, and G-U pair are assigned 1.
+
+    Args:
+        m: Molecule object.
+        show (bool): Make a matrix plot of the result.
+
+    Returns:
+        p: Complementarity matrix.
+    """
     l = len(m.seq)
     p = np.zeros((l, l))
     for i in range(l):

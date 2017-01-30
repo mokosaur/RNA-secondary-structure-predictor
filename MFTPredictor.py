@@ -37,7 +37,7 @@ class MFTPredictor(BasePredictor):
         """Predict molecule's secondary structure.
 
         Args:
-            molecule: Molecule object which structure is to be predicted.
+            molecule: Molecule object whose structure is to be predicted.
         """
         if not molecule.dot:
             molecule.dot = '.' * len(molecule.seq)
